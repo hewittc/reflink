@@ -116,8 +116,14 @@ func copyFileRange(dst, src *os.File, dstOffset, srcOffset, n int64) (int64, err
 
 	err = sd.Control(func(dfd uintptr) {
 		err2 = ss.Control(func(sfd uintptr) {
-			// call syscall
-			resN, err3 = unix.CopyFileRange(int(sfd), &srcOffset, int(dfd), &dstOffset, int(n), 0)
+			for rn := n; rn > 0; {
+				// call syscall
+				resN, err3 = unix.CopyFileRange(int(sfd), &srcOffset, int(dfd), &dstOffset, int(rn), 0)
+				if err3 != nil || resN == 0 {
+					break
+				}
+				rn -= int64(resN)
+			}
 		})
 	})
 
